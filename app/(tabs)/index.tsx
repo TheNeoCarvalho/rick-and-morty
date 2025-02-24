@@ -19,13 +19,13 @@ export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   async function fetchData(newPage: number) {
-    if (isLoading) return; // Evita chamadas duplicadas
+    if (isLoading) return;
 
     setIsLoading(true);
     try {
       const response = await fetch(`https://rickandmortyapi.com/api/character?page=${newPage}`);
       const json = await response.json();
-      setData((prevData) => [...prevData, ...json.results]); // Adiciona os novos personagens à lista
+      setData((prevData) => [...prevData, ...json.results]);
       setPage(newPage);
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
@@ -56,7 +56,10 @@ export default function HomeScreen() {
         nestedScrollEnabled={true}
         renderItem={({ item }) => (
           <Pressable onPress={() => {
-            router.push(`/character/${item.id}`)
+            router.push({
+              pathname: "/character/[id]",
+              params: { id: item.id }
+            });
           }}>
             <ThemedView style={styles.card}>
               <Image source={{ uri: item.image }} style={styles.image} />
@@ -70,7 +73,7 @@ export default function HomeScreen() {
         )}
         keyExtractor={(item, index) => item.name + "-" + index}
         onEndReached={() => fetchData(page + 1)}
-        onEndReachedThreshold={0.2} // Define quando a próxima página deve ser carregada (20% antes do final)
+        onEndReachedThreshold={0.2}
         ListFooterComponent={isLoading ? <ActivityIndicator size="large" color="#000" /> : null}
       />
     </ParallaxScrollView>

@@ -18,7 +18,7 @@ export default function CharacterDetail() {
     const [loading, setLoading] = useState(true);
 
     async function fetchCharacter() {
-        setLoading(true); // Ativa o loading sempre que a tela for visitada
+        setLoading(true);
         try {
             const response = await fetch(`https://rickandmortyapi.com/api/character/${id}`);
             const data = await response.json();
@@ -30,7 +30,6 @@ export default function CharacterDetail() {
         }
     }
 
-    // Recarregar dados toda vez que a tela for visitada
     useFocusEffect(
         useCallback(() => {
             fetchCharacter();
