@@ -1,14 +1,46 @@
-import { Image, StyleSheet, Platform } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
+import React, { useEffect, useState } from 'react';
+import { Image, StyleSheet, FlatList, ActivityIndicator, Pressable } from 'react-native';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Link, router } from 'expo-router';
+
+interface Character {
+  id: number;
+  image: string;
+  name: string;
+  species: string;
+  status: string;
+}
 
 export default function HomeScreen() {
+  const [data, setData] = useState<Character[]>([]);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function fetchData(newPage: number) {
+    if (isLoading) return; // Evita chamadas duplicadas
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`https://rickandmortyapi.com/api/character?page=${newPage}`);
+      const json = await response.json();
+      setData((prevData) => [...prevData, ...json.results]); // Adiciona os novos personagens à lista
+      setPage(newPage);
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchData(1);
+  }, []);
+
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+      headerBackgroundColor={{ light: '#fff', dark: '#000' }}
       headerImage={
         <Image
           source={require('@/assets/images/partial-react-logo.png')}
@@ -16,40 +48,31 @@ export default function HomeScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
+        <ThemedText type="title">Rick and Morty</ThemedText>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
+
+      <FlatList
+        data={data}
+        nestedScrollEnabled={true}
+        renderItem={({ item }) => (
+          <Pressable onPress={() => {
+            router.push(`/character/${item.id}`)
+          }}>
+            <ThemedView style={styles.card}>
+              <Image source={{ uri: item.image }} style={styles.image} />
+              <ThemedView style={{ backgroundColor: '#999' }}>
+                <ThemedText style={styles.name}>{item.name}</ThemedText>
+                <ThemedText>Espécie: {item.species === 'Human' ? 'Humano' : 'Alien'}</ThemedText>
+                <ThemedText>Status: {item.status === 'Alive' ? '🟢' : item.status === 'Dead' ? '🔴' : '🟡'}</ThemedText>
+              </ThemedView>
+            </ThemedView>
+          </Pressable>
+        )}
+        keyExtractor={(item, index) => item.name + "-" + index}
+        onEndReached={() => fetchData(page + 1)}
+        onEndReachedThreshold={0.2} // Define quando a próxima página deve ser carregada (20% antes do final)
+        ListFooterComponent={isLoading ? <ActivityIndicator size="large" color="#000" /> : null}
+      />
     </ParallaxScrollView>
   );
 }
@@ -58,17 +81,27 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 16,
   },
-  stepContainer: {
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
+    padding: 8,
+    backgroundColor: '#999',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  image: {
+    width: 100,
+    height: 100,
+    borderRadius: 100,
+  },
+  name: {
+    fontSize: 22,
+    fontWeight: 'bold',
   },
   reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+    width: '100%',
   },
 });
